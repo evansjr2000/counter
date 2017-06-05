@@ -1,0 +1,7 @@
+WebRules()
+
+LOCAL_LIBRARIES=/usr/local/lib/libmisc.a
+
+BuildWebProgram(dirsort,NullParameter)
+
+/* End of Imakefile */

@@ -1,0 +1,223 @@
+@* Counter. C program to generate counters for html documents. This
+program runs as a cgi-bin script and is called by an httpd daemon.  By
+default the routine will initialize a counter to zero, but you can
+initialize it to some other value. Also an option to NOT increment the
+counter can be used. This program was based on a ``buggy''  perl script
+that did the same thing. It was buggy because files on our busy server
+were occasionally reset to zero. I believe this was caused by a race
+condition between multiple copies of the program accessing the counter
+file simultaneously. By using POSIX record locking this problem has not
+re-occurred.
+
+Modified on May 11, 1997 to do permission checking. This was do to the
+fact that I was getting over a million hits a week, and someone in
+management was notified that lots of porno sites were using it. So, to
+keep the service going, I had to limit access to selected sites.
+
+@ This program is written in WEB, a preprocessor for C or Pascal. This
+style of programming is called ``Literate Programming.'' For Further
+information see the paper Literate Programming, by Donald Knuth in The
+Computer Journal, Vol 27, No. 2, 1984; or the book Weaving a Program:
+Literate Programming in WEB by Wayne Sewell, Van Nostrand Reinhold,
+1989.  Another good source of information is the Usenet group
+comp.programming.literate. It has information on new tools and a FAQ
+(Frequently Asked Questions).
+
+@ Everything is top down. Here is the first macro section that will then
+define all the other sections.
+@c
+@< Program @>
+
+@ Here is the top down structure of this program.
+@< Program @>=
+@< Global |#includes| @>
+@< Global structures @>
+@< Global variables @>
+@< Utility functions @>
+@< Main @>
+
+@ I need these standard include files.
+@< Global |#includes| @>=
+#include <stdio.h>
+#include <stdlib.h>
+
+@ Self explanatory. Standard structure for getting environment variables
+when in a cgi-bin script.
+@< Global structures @>=
+typedef struct {
+    char name[128]; char val[128]; } entry;
+
+@ Prototypes. These are routines that came with NCSAs httpd software.
+@< Global variables @>=
+void getword (char *word , char * line , char *stop );
+char x2c(char *what);
+void unescape url(char *url);
+void plustospace(char *str);
+
+@ Here I define all the environment varaibles that are supposed to be
+available to cgi-bin scripts. I also added |REFERER_URL| to check who is
+using the program. (This also meant that I had to slightly modify the
+file cgi.c of the NCSA httpd source to support a new environment
+variable.)
+@d NUM_EVARS 17
+@< Global variables @>=
+static char *enames[]= {"SERVER_SOFTWARE","SERVER_NAME","GATEWAY_INTERFACE",
+"SERVER_PROTOCOL", "SERVER_PORT", "REQUEST_METHOD", "HTTP_ACCEPT",
+"PATH_INFO", "PATH_TRANSLATED", "SCRIPT_NAME", "QUERY_STRING",
+"REMOTE_HOST", "REMOTE_ADDR", "REMOTE_USER", "CONTENT_TYPE",
+"CONTENT_LENGTH", "REFERER_URL"};
+
+@ Here is the main routine. Everything is modularized using literate
+programming modules which are supposed to be self-documenting.
+@< Main @>=
+void main(int argc,char *argv[]) {
+entry entries[100];
+register int x, m = 0; int i; char *cl; @;
+@< Local variables @> @;
+@< Check access privileges of referer @> @;
+@< Decode |QUERY_STRING| @>
+@< Convert options to uppercase @>
+@< Set options @>
+@< Open file @> @;
+finis : @< Generate bitmap @> @;
+exit(0);
+}
+
+@ List of permitted sites.
+@d P_NUM 9
+@< Global variables @>=
+static char *p_sites[] = {".mil/",".edu/",".org/","www.parentinglaw.com/",
+"www.americasnet.com/", "www.mmu.ac.uk/", "home.earthlink.net/",
+".bienlogic.com/", "www.vol.it/"};
+char *cl, *cl2, *ptr;
+int priv_found;
+
+
+@
+@< Check access privileges of referer@>=
+#if defined (DEBUG)
+printf("Checkingaccessprivilegesofcounterrequester.\n");
+#endif
+cl = getenv ("REFERER_URL");
+if (cl == NULL) {
+#if defined (DEBUG)
+printf("Whoaman!!YourhttpddoesnotsupportREFERER_URL.\n");
+#endif
+cl = (char *) malloc(80);
+strcpy (cl,"http://white.nosc.mil/~evansjr/referer/");
+}
+#if defined (DEBUG)
+printf ("cl=%s.\n", cl );
+#endif
+@< Parse URL @> @;
+priv_found = FALSE;
+for (i=0; i<P_NUM; i++) {
+#if defined(DEBUG)
+printf("Comparing%swith%s.\n", cl , p sites [i]);
+#endif
+if ((ptr = strstr(cl, p_sites [i])) == NULL) {
+    priv_found = TRUE;
+    i = P_NUM;
+    }
+}
+if (priv_found == FALSE) {
+   counter = 0;
+   do_invisible = FALSE;
+#if defined (DEBUG)
+    printf ("NOPRIVELEGES!\n");
+#endif
+goto finis;
+}
+
+@ 
+@< Parse URL @>=
+#if defined (DEBUG)
+printf ("Parsing␣URL␣%s.\n", cl );
+#endif
+cl2 =strstr(cl,"http://");
+if (cl2 == NULL) {
+#if defined (DEBUG)
+    printf ("␣Whoa␣man!!␣No␣http␣string␣in␣REFERER_URL.\n");
+#endif
+}
+ptr = (cl2 + 7);
+for (i=0; i<200; i++) {
+    cl[i] = ptr [i];
+    if (ptr[i] == ’/’) {
+       cl [i + 1] == NULL;
+       i = 200;
+       }
+}
+
+@ Stolen from query.c. However I modified |getword()| because it is evidently
+``bad-form'' to use character in html files. 
+@< Decode |QUERY_STRING| @>=
+cl = getenv ("QUERY_STRING"); if (cl == NULL) {
+    printf ("No␣query␣information␣to␣decode.\n");
+    exit (1); \
+    }
+#if defined (DEBUG)
+printf ("Your␣query␣string␣is␣%s.\n", cl );
+#endif
+for (x = 0; cl[0] /= ’\0’; x++) {
+    m = x;
+    getword (entries [x].val , cl , "&:;"); plustospace (entries [x].val );
+    unescape url(entries[x].val);
+    getword (entries [x].name , entries [x].val , "=");
+    }
+
+@ Make options case insensitive.
+@< Convert options to uppercase @>=
+for (x = 1; x <= m; x++) {
+    for (i = 0; entries[x].name[i] /= ’\0’; i++) {
+    	c = toupper(entries[x].name[i]);
+	entries[x].name[i] = (char) c;
+	}
+	for (i = 0; entries [x].val [i] /= ’\0’; i++) {
+	    c = toupper (entries [x].val [i]);
+	    entries[x].val[i] = (char) c;
+	    }
+    }
+
+@  Here I set the options for the returned counter. At a minimum there must be the counter file
+name. If |COUNT| is set and the file does not exist, the initial count value is set to |COUNT|.
+By default |INCR| is assumed to be true, but if it is set to false then no auto-incrementing is done.
+@d TRUE 1
+@d FALSE 0
+@< Set options @>=
+do_incr = TRUE;
+do_count = FALSE;
+do_reverse = FALSE;
+do_invisible = FALSE;
+for (x=0; x <=m ; x++) {
+    if ((strcmp(entries[x].name,"COUNT")) ≡ 0) {
+       counter =atoi(entries[x].val);
+       do_count = TRUE;
+       }
+    else if ((strcmp(entries[x].name,"INCR")) == 0) {
+       if ((strcmp(entries[x].val,"FALSE")) == 0) {
+       	  do incr = FALSE;
+	  }
+       }
+     }
+  else if ((strcmp(entries[x].name,"REVERSE")) == 0) {
+       if ((strcmp(entries[x].val,"TRUE"))≡0) {
+       	  do reverse =TRUE;
+	  }
+       }
+       else if ((strcmp(entries[x].name,"INVISIBLE")) == 0) {
+       	    if ((strcmp(entries[x].val,"TRUE")) == 0) {
+	       do invisible =TRUE;
+	       }
+	    }
+  }
+
+
+@ Here I define local variables to handle the counter options.
+@< Local variables @>=
+int do_incr, do_count, do_reverse, do_invisible; int c, fid;
+
+
+@ @< Utility functions @>=
+
+@* Index.
