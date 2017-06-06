@@ -217,6 +217,81 @@ for (x=0; x <=m ; x++) {
 @< Local variables @>=
 int do_incr, do_count, do_reverse, do_invisible; int c, fid;
 
+@ Opening and closing files is complicated. We need to avoid race conditions as multiple copies of this routine could be running. I use standard advisory locking (POSIX) to prevent this from happening.
+@< Open file @>=
+@< Stat file first @>
+@<⟨ Open appropriately @> @;
+@< Lock file @> @;
+@< Update counter prn @>
+@< Unlock and close file @>
+
+@ First I determine if the file even exists.
+@< Stat file first @>=
+strcpy(working dir,COUNTER_DIR);
+cfile = strcat (working dir , entries [0].name );
+if ((stat(cfile,&buf))<0) {
+ file exists = FALSE; }
+else {
+ file exists = TRUE;
+}
+
+@ The macro COUNTER_DIR is defined in counter.h. It is system specific so I have removed it from this code so that systems not having a WEB preprocessor can recompile the code.
+@< Global #includes @> =
+#include "counter.h"
+
+@ Here I open the file.
+@< Open appropriately @>=
+if (file exists) {
+    if ((fd =fopen(cfile,"r+"))≡Λ) {
+        printf ("Unable␣to␣open␣counter␣file␣%s\n", cfile );
+	exit (1);
+	}
+    }
+else {
+if ((fd =fopen(cfile,"w")) == NULL) {
+    printf ("Unable␣to␣open␣counter␣file␣%s\n", cfile );
+    exit (1);
+    }
+}
+fid = fileno(fd);
+
+@ If I am just reading the counter I just need a shared read lock. If I am also updating
+the lock I need an exclusive write lock.
+@< Lock file @>=
+if (do incr )
+   WRITE_LOCK(fid );
+else
+   READ_LOCK(fid);
+
+@
+@< Update counter prn @>=
+if ((!file_exists ) and (do_count )) {
+   fprintf (fd , "%d\n", counter );
+   }
+else {
+   fscanf (fd , "%d", &counter );
+   if (do_incr) {
+      counter++;
+      fseek (fd , SEEK_SET, 0);
+      fprintf (fd , "%d\n", counter );
+      }
+  }
+
+@ 
+@< Unlock and close file @>=
+UN_LOCK(fid );
+fclose (fd );
+
+
+@
+@< Local variables@> =
+int file exists;
+struct stat buf;
+FILE ∗fd;
+int counter = 0;
+char ∗cfile, working dir[80];
+
+
 
 @ @< Utility functions @>=
 
