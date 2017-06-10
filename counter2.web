@@ -179,9 +179,10 @@ for (x = 1; x <= m; x++) {
 	    }
     }
 
-@  Here I set the options for the returned counter. At a minimum there must be the counter file
-name. If |COUNT| is set and the file does not exist, the initial count value is set to |COUNT|.
-By default |INCR| is assumed to be true, but if it is set to false then no auto-incrementing is done.
+@  Here I set the options for the returned counter. At a minimum there must be the 
+counter file name. If |COUNT| is set and the file does not exist, the initial count 
+value is set to |COUNT|. By default |INCR| is assumed to be true, but if it is set 
+to false then no auto-incrementing is done.
 @d TRUE 1
 @d FALSE 0
 @< Set options @>=
@@ -217,10 +218,12 @@ for (x=0; x <=m ; x++) {
 @< Local variables @>=
 int do_incr, do_count, do_reverse, do_invisible; int c, fid;
 
-@ Opening and closing files is complicated. We need to avoid race conditions as multiple copies of this routine could be running. I use standard advisory locking (POSIX) to prevent this from happening.
+@ Opening and closing files is complicated. We need to avoid race conditions 
+as multiple copies of this routine could be running. I use standard advisory 
+locking (POSIX) to prevent this from happening.
 @< Open file @>=
 @< Stat file first @>
-@<⟨ Open appropriately @> @;
+@< Open appropriately @> @;
 @< Lock file @> @;
 @< Update counter prn @>
 @< Unlock and close file @>
@@ -235,8 +238,10 @@ else {
  file exists = TRUE;
 }
 
-@ The macro COUNTER_DIR is defined in counter.h. It is system specific so I have removed it from this code so that systems not having a WEB preprocessor can recompile the code.
-@< Global #includes @> =
+@ The macro COUNTER_DIR is defined in counter.h. It is system specific so I have 
+removed it from this code so that systems not having a WEB preprocessor can 
+recompile the code.
+@< Global |#includes| @> =
 #include "counter.h"
 
 @ Here I open the file.
