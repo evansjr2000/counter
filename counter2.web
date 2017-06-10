@@ -297,6 +297,58 @@ int counter = 0;
 char ∗cfile, working dir[80];
 
 
+@* Bitmap Generation.
+
+@ These are neede in the following code.
+@< Global |#includes| @>=
+#include <unistd.h>
+#include <sys/types.h>
+#include <ctype.h>
+#include <string.h>
+#include <math.h>
+
+
+@ Here I generate the bitmap. The macro |MINLEN| is the minimum number 
+of characters to generate. If the number requires more than |MINLEN| 
+characters, then it generates them.
+#define MINLEN 6
+@< Generate bitmap @>=
+@< Order digits @>
+if (! do_invisible) {
+    @< Write digits @>
+    }
+else {
+     @< Write out null image@>
+     }
+
+@  Here I order the digits.
+@< Order digits @>=
+if (counter ≡ 0) {
+   x = 1; 
+   }
+else {
+     x = ((int) floor (log10 (counter ))) + 1;
+     }
+i = 0;
+if (x < MINLEN) {
+   for (i=0; i<(MINLEN−x); i++) 
+       { digits [i] = 0;
+   }
+   numdigits =MINLEN;
+   }
+else {
+     numdigits = x;
+     }
+newc = counter; 
+while (newc > 0) {
+   x−−;
+   if (x > 0) 
+      powr = ((int) pow (10.0, x)); 
+   else powr = 1;
+   digits [i] = newc/powr ;
+   newc = newc − ( digits[i++]*power);
+}
+
 
 @ @< Utility functions @>=
 
