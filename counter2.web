@@ -200,17 +200,16 @@ for (x=0; x <=m ; x++) {
        	  do_incr = FALSE;
 	  }
        }
-     }
-  else if (strcmp(entries[x].name,"REVERSE") == 0) {
+    else if ((strcmp(entries[x].name,"REVERSE")) == 0) {
        if (strcmp(entries[x].val,"TRUE") == 0) {
        	  do_reverse =TRUE;
 	  }
        }
-       else if (strcmp(entries[x].name,"INVISIBLE") == 0) {
-       	    if (strcmp(entries[x].val,"TRUE") == 0) {
+    else if (strcmp(entries[x].name,"INVISIBLE") == 0) {
+        if (strcmp(entries[x].val,"TRUE") == 0) {
 	       do_invisible =TRUE;
 	       }
-	    }
+	}
   }
 
 
@@ -263,7 +262,7 @@ fid = fileno(fd);
 @ If I am just reading the counter I just need a shared read lock. If I am also updating
 the lock I need an exclusive write lock.
 @< Lock file @>=
-if (do incr )
+if (do_incr)
    WRITE_LOCK(fid );
 else
    READ_LOCK(fid);
