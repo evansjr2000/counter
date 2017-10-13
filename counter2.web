@@ -415,7 +415,7 @@ else {
     }
 }
 
-@
+@ Write out last 3 lines of filler.
 @< Write out last 3 lines of filler @>=
 for ( j = 0 ; j < ( 3 ∗ numdigits−1 ) ; j++ ) {
     printf ("%s,", filler );
